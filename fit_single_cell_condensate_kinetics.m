@@ -1,13 +1,10 @@
-filenames = dir('*.log');
+% Note that the Source Data matrices provided on the "Fig S2B" tab can be
+% directly used as the variable "y_rap" - the delta_CVs for rapamycin
+% treatment in each cell, at each time point.
+
+load S2B_5um_rap
 
 nY = 61; % Number of timepoints in total.
-
-y_rap = nan*ones(nY,length(filenames));
-for i = 1:length(filenames)
-    tmp = importdata(filenames(i).name);
-    y_rap(:,i) = tmp.data(1:nY,4)./tmp.data(1:nY,3);
-end
-
 dt = 40/60; % Time between imaging frames in min. Data was typically collected every 40 sec.
 x = dt*(-3:(nY-3)-1);
 
@@ -36,6 +33,13 @@ xlabel('time (min)')
 ylabel('intensity')
 hold on
 plot(x, fitted_model(x), 'k--')
-text(20,1.1,'\tau = 15.4 +/- 2.9 min', 'fontsize', 14) % obtained from the fitted_model parameters
-fitted_model
+
+% the tau below is obtained from fitted_model.c; I do not know how to get
+% the 95% confidence bounds as a variable, so I manually entered these
+% values below:
+fprintf('tau = %0.3g\n', fitted_model.c)
+text(20,1.1,'\tau = 15.4 +/- 2.9 min', 'fontsize', 14) 
+
+% again, number of replicates is manually entered below based on the dates
+% we have carried out the experiments.
 title(sprintf('n = %d cells from 4 replicates', size(yn_rap,2)))
