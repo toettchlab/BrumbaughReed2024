@@ -1,0 +1,955 @@
+---
+title: "MBP dissolution project"
+output: html_notebook
+---
+
+```{r}
+
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(RColorBrewer)
+
+```
+
+```{r}
+# panel of recruited proteins delta CV for Figure 1 - delta variance
+
+CVData <- read.table("Z:/Ellen/! MBP paper/delta_variance_compiled.csv",header=TRUE,sep=",")
+CVDatadftable <- data.frame(CVData)
+
+CVDatadf <- CVDatadftable %>% pivot_longer(everything())
+
+CVDatadf$name <- factor(CVDatadf$name,                                    
+                  levels = c("Neg", "MBP", "GST", "mCherry", "mGFP", "xmGFP"))
+
+CVDataplot2 <- ggplot(CVDatadf, aes(x=name, y=value)) + geom_violin(trim=TRUE, fill = '#A4A4A4') + geom_boxplot(width = 0.15) + ylim(0,2) +  theme(legend.position="none",panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+
+CVDataplot2
+ggsave("deltaCV_violin.pdf", width=3.5, height=3)
+
+```
+
+```{r}
+# panel of recruited proteins delta enrichment for Figure 1 - delta enrichment
+
+CVData <- read.table("Z:/Ellen/! MBP paper/delta_enrichment_compiled.csv",header=TRUE,sep=",")
+CVDatadftable <- data.frame(CVData)
+
+CVDatadf <- CVDatadftable %>% pivot_longer(everything())
+
+CVDatadf$name <- factor(CVDatadf$name,                                    
+                  levels = c("Neg", "MBP", "GST", "mCherry", "mGFP", "xmGFP"))
+
+CVDataplot2 <- ggplot(CVDatadf, aes(x=name, y=value)) + geom_violin(trim=TRUE, fill = '#A4A4A4') + geom_boxplot(width = 0.15) + ylim(0,2) +  theme(legend.position="none",panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+CVDataplot2
+ggsave("deltaenrichment_violin.pdf", width=3.5, height=3)
+
+```
+
+
+
+```{r}
+# panel of recruited proteins delta CV for Figure 1 - delta variance using subtraction
+
+CVData <- read.table("Z:/Ellen/! MBP paper/delta_variance_compiled_sub.csv",header=TRUE,sep=",")
+CVDatadftable <- data.frame(CVData)
+
+CVDatadf <- CVDatadftable %>% pivot_longer(everything())
+
+CVDatadf$name <- factor(CVDatadf$name,                                    
+                  levels = c("Neg", "MBP", "GST", "mCherry", "mGFP", "xmGFP"))
+
+CVDataplot2 <- ggplot(CVDatadf, aes(x=name, y=value)) + geom_violin(trim=TRUE, fill = '#A4A4A4') + geom_boxplot(width = 0.15) + ylim(-1.5,0.5) +  theme(legend.position="none",panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+
+CVDataplot2
+ggsave("deltaCV_violin_sub.pdf", width=3.5, height=3)
+
+```
+
+```{r}
+# panel of recruited proteins delta CV for Figure 1 - delta variance using subtraction
+
+CVData <- read.table("Z:/Ellen/! MBP paper/delta_variance_compiled_sub.csv",header=TRUE,sep=",")
+CVDatadftable <- data.frame(CVData)
+
+CVDatadf <- CVDatadftable %>% pivot_longer(everything())
+
+CVDatadf$name <- factor(CVDatadf$name,                                    
+                  levels = c("Neg", "MBP", "GST", "mCherry", "mGFP", "xmGFP"))
+
+CVDataplot2 <- ggplot(CVDatadf, aes(x=name, y=value))  + geom_boxplot(fill = '#A4A4A4', outlier.size = 0.4) + ylim(-1.5,0.5) +  theme(legend.position="none",panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+
+CVDataplot2
+ggsave("deltaCV_violin_sub.pdf", width=2.75, height=2)
+
+```
+
+```{r}
+# panel of recruited proteins delta enrichment for Figure 1 - delta enrichment using subtraction
+
+CVData <- read.table("Z:/Ellen/! MBP paper/delta_enrichment_compiled_sub.csv",header=TRUE,sep=",")
+CVDatadftable <- data.frame(CVData)
+
+CVDatadf <- CVDatadftable %>% pivot_longer(everything())
+
+CVDatadf$name <- factor(CVDatadf$name,                                    
+                  levels = c("Neg", "MBP", "GST", "mCherry", "mGFP", "xmGFP"))
+
+CVDataplot2 <- ggplot(CVDatadf, aes(x=name, y=value)) + geom_boxplot(fill = '#A4A4A4', outlier.size = 0.4) + ylim(-25,10) +  theme(legend.position="none",panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+CVDataplot2
+ggsave("deltaenrichment_violin_sub.pdf", width=2.75, height=2)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+# supplemental plots showing the red and iR pixel intensity values for each protein if interest in Fig 1
+# RFP
+CVData <- read.table("Z:/Ellen/! MBP paper/RFP_values.csv",header=TRUE,sep=",")
+CVDatadftable <- data.frame(CVData)
+
+CVDatadf <- CVDatadftable %>% pivot_longer(everything())
+
+CVDatadf$name <- factor(CVDatadf$name,                                    
+                  levels = c("Neg", "MBP", "GST", "mCherry", "mGFP", "xmGFP"))
+
+CVDataplot2 <- ggplot(CVDatadf, aes(x=name, y=value)) + geom_violin(trim=TRUE, fill = '#A4A4A4') + geom_boxplot(width = 0.15) + ylim(0,10000) +  theme(legend.position="none",panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+
+CVDataplot2
+ggsave("RFP_supp.pdf", width=3.5, height=3)
+
+```
+
+```{r}
+# supplemental plots showing the red and iR pixel intensity values for each protein if interest in Fig 1
+# iRFP
+CVData <- read.table("Z:/Ellen/! MBP paper/iRFP_values.csv",header=TRUE,sep=",")
+CVDatadftable <- data.frame(CVData)
+
+CVDatadf <- CVDatadftable %>% pivot_longer(everything())
+
+CVDatadf$name <- factor(CVDatadf$name,                                    
+                  levels = c("MBP", "GST", "mCherry", "mGFP", "xmGFP"))
+
+CVDataplot2 <- ggplot(CVDatadf, aes(x=name, y=value)) + geom_violin(trim=TRUE, fill = '#A4A4A4') + geom_boxplot(width = 0.15) + ylim(0,6000) +  theme(legend.position="none",panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+
+CVDataplot2
+ggsave("iRFP_supp.pdf", width=3, height=3)
+
+```
+
+```{r}
+# hexandiol data delta CV
+
+CVData <- read.table("Z:/Ellen/! MBP paper/hexanediol_variance.csv",header=TRUE,sep=",")
+CVDatadftable <- data.frame(CVData)
+
+CVDatadf <- CVDatadftable %>% pivot_longer(everything())
+
+CVDatadf$name <- factor(CVDatadf$name,                                    
+                  levels = c("Neg", "blue", "hex"))
+
+CVDataplot2 <- ggplot(CVDatadf, aes(x=name, y=value)) + geom_violin(trim=TRUE, fill = '#A4A4A4') + geom_boxplot(width = 0.15) + ylim(0,2) +  theme(legend.position="none",panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+CVDataplot2
+
+ggsave("deltaCVhex_violin.pdf", width=2, height=3)
+
+
+```
+
+```{r}
+
+CVData <- read.table("Z:/Ellen/! MBP paper/hexanediol_enrichment.csv",header=TRUE,sep=",")
+CVDatadftable <- data.frame(CVData)
+
+CVDatadf <- CVDatadftable %>% pivot_longer(everything())
+
+CVDatadf$name <- factor(CVDatadf$name,                                    
+                  levels = c("Neg", "blue", "hex"))
+
+CVDataplot2 <- ggplot(CVDatadf, aes(x=name, y=value)) + geom_violin(trim=TRUE, fill = '#A4A4A4') + geom_boxplot(width = 0.15) + ylim(0,2) +  theme(legend.position="none",panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+CVDataplot2
+
+
+ggsave("deltaenrichhex_violin.pdf", width=2, height=3)
+
+```
+
+```{r}
+# radius of gyration vs CV for supplement
+
+CVData <- read.table("Z:/Ellen/! MBP paper/DeltaCV_and_Rg.csv",header=TRUE,sep=",")
+CVDatadf <- data.frame(CVData)
+
+CVDatadf$Tag <- factor(CVDatadf$Tag,                                    
+                  levels = c("mGFP", "mGFP-mGFP", "GST", "mCherry", "MBP", "Neg"))
+
+CVDataplot <- ggplot(CVDatadf, aes(x=Rg, y=dCV, group = Rg)) +
+  geom_violin(trim=TRUE, fill = '#A4A4A4',width = 0.15, aes(x=Rg, y=dCV, group = Rg)) +
+  geom_boxplot(aes(x=Rg, y=dCV, group = Rg)) + 
+  ylim(0,2) + 
+  xlim(1.5,2.5) +
+  theme(
+    panel.background = element_blank(), 
+    axis.line = element_line(colour = "black"), 
+    axis.text = element_text(size = 14),
+    axis.title.x = element_text(size = 14),
+    axis.title.y = element_text(size = 14)
+    )
+
+CVDataplot
+
+ggsave("deltaCV_Rg.pdf", width=3.5, height=3)
+
+```
+
+```{r}
+# molecular weight vs CV for supplement
+
+CVData <- read.table("Z:/Ellen/! MBP paper/DeltaCV_and_MW.csv",header=TRUE,sep=",")
+CVDatadf <- data.frame(CVData)
+
+CVDatadf$Tag <- factor(CVDatadf$Tag,                                    
+                  levels = c("mGFP", "mGFP-mGFP", "GST", "mCherry", "MBP", "Neg"))
+
+CVDataplot <- ggplot(CVDatadf, aes(x=MW, y=dCV, group = MW)) +
+  geom_violin(trim=TRUE, fill = '#A4A4A4',width = 0.5, aes(x=MW, y=dCV, group = MW)) +
+  geom_boxplot(aes(x=MW, y=dCV, group = MW), width = 0.2) + 
+  ylim(0,1.75) + 
+  xlim(2,6) +
+  theme(
+    panel.background = element_blank(), 
+    axis.line = element_line(colour = "black"), 
+    axis.text = element_text(size = 14),
+    axis.title.x = element_text(size = 14),
+    axis.title.y = element_text(size = 14)
+    )
+
+CVDataplot
+
+ggsave("deltaCV_MW.pdf", width=3.5, height=3)
+
+```
+
+
+```{r}
+# timecourse data in 3xFUS channel
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(RColorBrewer)
+
+
+SspBData <- read.table("Z:/Ellen/! MBP paper/time_red_compiled.csv",header=TRUE,sep=",")
+
+SspB_df_tidy <- gather(SspBData, cell, ratio, -time)
+
+#ggplot(SspB_df_tidy, aes(x=time, y=ratio)) + geom_line(aes(color=cell))
+
+df_summary <- data.frame(time=SspBData$time, n=tapply(SspB_df_tidy$ratio, SspB_df_tidy$time, length), mean=tapply(SspB_df_tidy$ratio, SspB_df_tidy$time, mean))
+df_summary$sd <- tapply(SspB_df_tidy$ratio, SspB_df_tidy$time, sd)
+df_summary$sem <- df_summary$sd/sqrt(df_summary$n-1)
+df_summary$CI_lower <- df_summary$mean + qt((1-0.95)/2, df=df_summary$n-1)*df_summary$sem
+df_summary$CI_upper <- df_summary$mean - qt((1-0.95)/2, df=df_summary$n-1)*df_summary$sem
+
+
+ggplot(df_summary, aes(x=time, y=mean)) +
+   geom_line(data=SspB_df_tidy, aes(x=time, y=ratio, group=cell), color="grey") +
+   geom_line(size=1, alpha=0.8) +
+   geom_ribbon(aes(ymin=CI_lower, ymax=CI_upper) ,fill="blue", alpha=0.2) +
+   theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ylab("variance/mean")+
+  xlab("time (sec)") +
+  ylim(0,1.2) +
+  xlim(0,200)
+
+ggsave("SspB_kinetics_fit_font.pdf", width=3, height=2)
+
+f <- function(time,A,B,K)(A+((K-A)/(1+exp(-1*time*B)))) # generalized logistic function
+#f <- function(time,A,B)(A*exp(-time/B))
+fit <- nls(mean ~ f(time,A,B,K), data=df_summary, start=list(A=0.2,B=-0.03,K=0.75))
+summary(fit)
+
+fitY <- predict(fit)
+p <- ggplot(df_summary, aes(x=time, y=mean)) + geom_line(color="blue",size=1, alpha = 0.5) +geom_point(color="blue",size = 2, alpha = 0.5)+ geom_line(aes(x=time,y=fitY),size=1, alpha = 0.5) +
+   theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ylab("variance/mean")+
+  xlab("time (sec)") +
+  ylim(0,1.2) +
+  xlim(0,200)
+p
+
+#ggsave("SspB_kinetics_fit_testfit.pdf", width=3, height=2)
+
+
+```
+
+```{r}
+# timecourse data in MBP channel
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(RColorBrewer)
+
+
+SspBData <- read.table("Z:/Ellen/! MBP paper/time_iR_compiled.csv",header=TRUE,sep=",")
+#SspBData <- read.table("Z:/Ellen/! MBP paper/FUS_cycle_data.csv",header=TRUE,sep=",")
+
+SspB_df_tidy <- gather(SspBData, cell, ratio, -time)
+
+#ggplot(SspB_df_tidy, aes(x=time, y=ratio)) + geom_line(aes(color=cell))
+
+df_summary <- data.frame(time=SspBData$time, n=tapply(SspB_df_tidy$ratio, SspB_df_tidy$time, length), mean=tapply(SspB_df_tidy$ratio, SspB_df_tidy$time, mean))
+df_summary$sd <- tapply(SspB_df_tidy$ratio, SspB_df_tidy$time, sd)
+df_summary$sem <- df_summary$sd/sqrt(df_summary$n-1)
+df_summary$CI_lower <- df_summary$mean + qt((1-0.95)/2, df=df_summary$n-1)*df_summary$sem
+df_summary$CI_upper <- df_summary$mean - qt((1-0.95)/2, df=df_summary$n-1)*df_summary$sem
+
+
+ggplot(df_summary, aes(x=time, y=mean)) +
+   geom_line(data=SspB_df_tidy, aes(x=time, y=ratio, group=cell), color="grey") +
+   geom_line(size=1, alpha=0.8) +
+   geom_ribbon(aes(ymin=CI_lower, ymax=CI_upper) ,fill="blue", alpha=0.2) +
+   theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ylab("variance/mean")+
+  xlab("time (sec)") +
+  ylim(0,1.2) +
+  xlim(0,200)
+
+#ggsave("SspB_iRFP_kinetics_fit_font.pdf", width=3, height=2)
+
+
+
+
+```
+
+```{r}
+# droplet recovery on MBP channel
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(RColorBrewer)
+
+
+#SspBData <- read.table("Z:/Ellen/! MBP paper/time_iR_compiled.csv",header=TRUE,sep=",")
+#SspBData <- read.table("Z:/Ellen/! MBP paper/FUS_cycle_data.csv",header=TRUE,sep=",")
+SspBData <- read.table("Z:/Ellen/! MBP paper/droplet_recovery_sum.csv",header=TRUE,sep=",")
+
+SspB_df_tidy <- gather(SspBData, cell, ratio, -time)
+
+#ggplot(SspB_df_tidy, aes(x=time, y=ratio)) + geom_line(aes(color=cell))
+
+df_summary <- data.frame(time=SspBData$time, n=tapply(SspB_df_tidy$ratio, SspB_df_tidy$time, length), mean=tapply(SspB_df_tidy$ratio, SspB_df_tidy$time, mean))
+df_summary$sd <- tapply(SspB_df_tidy$ratio, SspB_df_tidy$time, sd)
+df_summary$sem <- df_summary$sd/sqrt(df_summary$n-1)
+df_summary$CI_lower <- df_summary$mean + qt((1-0.95)/2, df=df_summary$n-1)*df_summary$sem
+df_summary$CI_upper <- df_summary$mean - qt((1-0.95)/2, df=df_summary$n-1)*df_summary$sem
+
+
+ggplot(df_summary, aes(x=time, y=mean)) +
+   geom_line(data=SspB_df_tidy, aes(x=time, y=ratio, group=cell), color="grey") +
+   geom_line(size=1, alpha=0.8) +
+   geom_ribbon(aes(ymin=CI_lower, ymax=CI_upper) ,fill="blue", alpha=0.2) +
+   theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ylab("variance/mean")+
+  xlab("time (min)") +
+  ylim(0,1.2) +
+  xlim(0,8)
+
+ggsave("Droplet Recovery.pdf", width=3, height=2)
+
+f <- function(time,A,B,K)(A+((K-A)/(1+exp(-1*time*B)))) # generalized logistic function
+#f <- function(time,A,B)(A*exp(-time/B))
+fit <- nls(mean ~ f(time,A,B,K), data=df_summary, start=list(A=0.2,B=-0.03,K=0.75))
+summary(fit)
+
+fitY <- predict(fit)
+p <- ggplot(df_summary, aes(x=time, y=mean)) + geom_line(color="blue",size=1, alpha = 0.5) +geom_point(color="blue",size = 2, alpha = 0.5)+ geom_line(aes(x=time,y=fitY),size=1, alpha = 0.5) +
+   theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ylab("variance/mean")+
+  xlab("time (sec)") +
+  ylim(0,1.2) +
+  xlim(0,200)
+p
+
+
+```
+
+```{r}
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(RColorBrewer)
+
+#SspBData <- read.table("Z:/Ellen/! MBP paper/time_iR_compiled.csv",header=TRUE,sep=",")
+SspBData <- read.table("Z:/Ellen/! MBP paper/FUS_cycle_data_min.csv",header=TRUE,sep=",")
+
+SspB_df_tidy <- gather(SspBData, cell, ratio, -time)
+
+#ggplot(SspB_df_tidy, aes(x=time, y=ratio)) + geom_line(aes(color=cell))
+
+df_summary <- data.frame(time=SspBData$time, n=tapply(SspB_df_tidy$ratio, SspB_df_tidy$time, length), mean=tapply(SspB_df_tidy$ratio, SspB_df_tidy$time, mean))
+df_summary$sd <- tapply(SspB_df_tidy$ratio, SspB_df_tidy$time, sd)
+df_summary$sem <- df_summary$sd/sqrt(df_summary$n-1)
+df_summary$CI_lower <- df_summary$mean + qt((1-0.95)/2, df=df_summary$n-1)*df_summary$sem
+df_summary$CI_upper <- df_summary$mean - qt((1-0.95)/2, df=df_summary$n-1)*df_summary$sem
+
+
+ggplot(df_summary, aes(x=time, y=mean)) +
+   geom_line(data=SspB_df_tidy, aes(x=time, y=ratio, group=cell), color="grey") +
+   geom_line(size=1, alpha=0.8) +
+   geom_ribbon(aes(ymin=CI_lower, ymax=CI_upper) ,fill="blue", alpha=0.2) +
+   theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ylab("variance/mean")+
+  xlab("time (min)") +
+  ylim(0,1.2) +
+  xlim(0,90) +
+  annotate("rect",xmin=0,xmax=5,ymin=-Inf,ymax=Inf, alpha=0.2, fill="#00AEEF")+
+  annotate("rect",xmin=15,xmax=20,ymin=-Inf,ymax=Inf, alpha=0.2, fill="#00AEEF")+
+  annotate("rect",xmin=30,xmax=35,ymin=-Inf,ymax=Inf, alpha=0.2, fill="#00AEEF")+
+  annotate("rect",xmin=45,xmax=50,ymin=-Inf,ymax=Inf, alpha=0.2, fill="#00AEEF")+
+  annotate("rect",xmin=60,xmax=65,ymin=-Inf,ymax=Inf, alpha=0.2, fill="#00AEEF")+
+  annotate("rect",xmin=75,xmax=80,ymin=-Inf,ymax=Inf, alpha=0.2, fill="#00AEEF")
+
+ggsave("cycle_kinetics.pdf", width=4, height=2)
+```
+
+
+
+
+
+
+
+```{r}
+
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(RColorBrewer)
+
+
+illumData <- read.table("Z:/Ellen/! MBP paper/subcell_illum.csv",header=TRUE,sep=",")
+
+illumData_df_tidy <- gather(illumData, cell, ratio, -time)
+
+
+df_summary <- data.frame(time=illumData$time, n=tapply(illumData_df_tidy$ratio, illumData_df_tidy$time, length), mean=tapply(illumData_df_tidy$ratio, illumData_df_tidy$time, mean))
+df_summary$sd <- tapply(illumData_df_tidy$ratio, illumData_df_tidy$time, sd)
+df_summary$sem <- df_summary$sd/sqrt(df_summary$n-1)
+df_summary$CI_lower <- df_summary$mean + qt((1-0.95)/2, df=df_summary$n-1)*df_summary$sem
+df_summary$CI_upper <- df_summary$mean - qt((1-0.95)/2, df=df_summary$n-1)*df_summary$sem
+
+
+
+nonillumData <- read.table("Z:/Ellen/! MBP paper/subcell_Nonillum.csv",header=TRUE,sep=",")
+
+nonillumData_df_tidy <- gather(nonillumData, cell, ratio, -time)
+
+
+df_summary2 <- data.frame(time=nonillumData$time, n=tapply(nonillumData_df_tidy$ratio, nonillumData_df_tidy$time, length), mean=tapply(nonillumData_df_tidy$ratio, nonillumData_df_tidy$time, mean))
+df_summary2$sd <- tapply(nonillumData_df_tidy$ratio, nonillumData_df_tidy$time, sd)
+df_summary2$sem <- df_summary2$sd/sqrt(df_summary2$n-1)
+df_summary2$CI_lower <- df_summary2$mean + qt((1-0.95)/2, df=df_summary2$n-1)*df_summary2$sem
+df_summary2$CI_upper <- df_summary2$mean - qt((1-0.95)/2, df=df_summary2$n-1)*df_summary2$sem
+
+
+ggplot(df_summary, aes(x=time, y=mean)) +
+   geom_line(data=illumData_df_tidy, aes(x=time, y=ratio, group=cell), color="lightslateblue") +
+   geom_line(size=1, alpha=0.8) +
+   geom_ribbon(aes(ymin=df_summary$CI_lower, ymax=df_summary$CI_upper) ,fill="blue", alpha=0.2) +
+   geom_line(data = df_summary2, aes(x=time, y=mean)) +
+   geom_line(data=nonillumData_df_tidy, aes(x=time, y=ratio, group=cell), color="grey") +
+   geom_line(size=1, alpha=0.8) +
+   geom_ribbon(aes(ymin=df_summary2$CI_lower, ymax=df_summary2$CI_upper) ,fill="grey30", alpha=0.2) +
+   
+  theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ylab("variance/mean")+
+  xlab("time (sec)") +
+  ylim(0,1.25) +
+  xlim(0,180)
+
+
+
+#ggsave("SubCell_Diss.pdf", width=2.5, height=2)
+
+
+
+
+```
+
+```{r}
+#subcell illumination - single droplet
+
+
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(RColorBrewer)
+
+
+illumData <- read.table("Z:/Ellen/! MBP paper/subcell_illum_single.csv",header=TRUE,sep=",")
+
+illumData_df_tidy <- gather(illumData, cell, ratio, -time)
+
+
+df_summary <- data.frame(time=illumData$time, n=tapply(illumData_df_tidy$ratio, illumData_df_tidy$time, length), mean=tapply(illumData_df_tidy$ratio, illumData_df_tidy$time, mean))
+df_summary$sd <- tapply(illumData_df_tidy$ratio, illumData_df_tidy$time, sd)
+df_summary$sem <- df_summary$sd/sqrt(df_summary$n-1)
+df_summary$CI_lower <- df_summary$mean + qt((1-0.95)/2, df=df_summary$n-1)*df_summary$sem
+df_summary$CI_upper <- df_summary$mean - qt((1-0.95)/2, df=df_summary$n-1)*df_summary$sem
+
+
+
+
+nonillumData <- read.table("Z:/Ellen/! MBP paper/subcell_Nonillum_single.csv",header=TRUE,sep=",")
+
+nonillumData_df_tidy <- gather(nonillumData, cell, ratio, -time)
+
+
+df_summary2 <- data.frame(time=nonillumData$time, n=tapply(nonillumData_df_tidy$ratio, nonillumData_df_tidy$time, length), mean=tapply(nonillumData_df_tidy$ratio, nonillumData_df_tidy$time, mean))
+df_summary2$sd <- tapply(nonillumData_df_tidy$ratio, nonillumData_df_tidy$time, sd)
+df_summary2$sem <- df_summary2$sd/sqrt(df_summary2$n-1)
+df_summary2$CI_lower <- df_summary2$mean + qt((1-0.95)/2, df=df_summary2$n-1)*df_summary2$sem
+df_summary2$CI_upper <- df_summary2$mean - qt((1-0.95)/2, df=df_summary2$n-1)*df_summary2$sem
+
+
+ggplot(df_summary, aes(x=time, y=mean)) +
+   geom_line(data=illumData_df_tidy, aes(x=time, y=ratio, group=cell), color="lightslateblue") +
+   geom_line(size=1, alpha=0.8) +
+   geom_ribbon(aes(ymin=df_summary$CI_lower, ymax=df_summary$CI_upper) ,fill="blue", alpha=0.2) +
+   geom_line(data = df_summary2, aes(x=time, y=mean)) +
+   geom_line(data=nonillumData_df_tidy, aes(x=time, y=ratio, group=cell), color="grey") +
+   geom_line(size=1, alpha=0.8) +
+   geom_ribbon(aes(ymin=df_summary2$CI_lower, ymax=df_summary2$CI_upper) ,fill="grey30", alpha=0.2) +
+   
+  theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ylab("variance/mean")+
+  xlab("time (sec)") +
+  ylim(0,1.5) +
+  xlim(0,11)
+
+
+
+ggsave("SubCell_Diss_singledroplet.pdf", width=3, height=2)
+
+
+
+
+```
+
+```{r}
+# single droplet characteristic timescale
+
+illumData <- read.table("Z:/Ellen/! MBP paper/subcell_illum_single.csv",header=TRUE,sep=",")
+
+illumData_df_tidy <- gather(illumData, cell, ratio, -time)
+
+df_summary <- data.frame(time=illumData$time, n=tapply(illumData_df_tidy$ratio, illumData_df_tidy$time, length), mean=tapply(illumData_df_tidy$ratio, illumData_df_tidy$time, mean))
+df_summary$sd <- tapply(illumData_df_tidy$ratio, illumData_df_tidy$time, sd)
+df_summary$sem <- df_summary$sd/sqrt(df_summary$n-1)
+df_summary$CI_lower <- df_summary$mean + qt((1-0.95)/2, df=df_summary$n-1)*df_summary$sem
+df_summary$CI_upper <- df_summary$mean - qt((1-0.95)/2, df=df_summary$n-1)*df_summary$sem
+
+f <- function(time,A,B,K)(A+((K-A)/(1+exp(-1*time*B)))) # generalized logistic function
+fit <- nls(mean ~ f(time,A,B,K), data=df_summary, start=list(A=-0.2,B=-0.5,K=0.75))
+summary(fit)
+
+fitY <- predict(fit)
+p <- ggplot(df_summary, aes(x=time, y=mean)) + geom_line(color="blue",size=1, alpha = 0.5) +geom_point(color="blue",size = 2, alpha = 0.5)+ geom_line(aes(x=time,y=fitY),size=1, alpha = 0.5) +
+   theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ylab("variance/mean")+
+  xlab("time (sec)") +
+  ylim(0,1.2) +
+  xlim(0,10)
+p
+
+```
+
+
+```{r}
+# FRB/FKBP rapamycin data delta CV
+
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(RColorBrewer)
+
+CVData <- read.table("Z:/Ellen/! MBP paper/3xFUSFRB_variance.csv",header=TRUE,sep=",")
+CVDatadftable <- data.frame(CVData)
+
+CVDatadf <- CVDatadftable %>% pivot_longer(everything())
+
+CVDatadf$name <- factor(CVDatadf$name,                                    
+                  levels = c("Neg", "blue", "rap"))
+
+CVDataplot2 <- ggplot(CVDatadf, aes(x=name, y=value)) + geom_violin(trim=TRUE, fill = '#A4A4A4') + geom_boxplot(width = 0.15) + ylim(0,2) +  theme(legend.position="none",panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+
+
+CVDataplot2
+
+
+ggsave("deltaCVrap_violin.pdf", width=2, height=3)
+
+
+```
+
+```{r}
+# FRB/FKBP rapamycin data delta enrichment
+
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(RColorBrewer)
+
+CVData <- read.table("Z:/Ellen/! MBP paper/3xFUSFRB_enrichment.csv",header=TRUE,sep=",")
+CVDatadftable <- data.frame(CVData)
+
+CVDatadf <- CVDatadftable %>% pivot_longer(everything())
+
+CVDatadf$name <- factor(CVDatadf$name,                                    
+                  levels = c("Neg", "blue", "rap"))
+
+CVDataplot2 <- ggplot(CVDatadf, aes(x=name, y=value)) + geom_violin(trim=TRUE, fill = '#A4A4A4') + geom_boxplot(width = 0.15) + ylim(0,2) +  theme(legend.position="none",panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+
+
+CVDataplot2
+
+
+ggsave("deltaenrichrap_violin.pdf", width=2, height=3)
+
+
+```
+
+```{r}
+# supplemental plots showing the red and iR pixel intensity values for each protein if interest in Fig 1
+# RFP
+CVData <- read.table("Z:/Ellen/! MBP paper/rap_RFP_values.csv",header=TRUE,sep=",")
+CVDatadftable <- data.frame(CVData)
+
+CVDatadf <- CVDatadftable %>% pivot_longer(everything())
+
+CVDatadf$name <- factor(CVDatadf$name,                                    
+                  levels = c("light", "rap"))
+
+CVDataplot2 <- ggplot(CVDatadf, aes(x=name, y=value)) + geom_violin(trim=TRUE, fill = '#A4A4A4') + geom_boxplot(width = 0.15) + ylim(0,10000) +  theme(legend.position="none",panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+
+CVDataplot2
+ggsave("rap_RFP_supp.pdf", width=2, height=3)
+
+```
+
+```{r}
+# supplemental plots showing the red and iR pixel intensity values for each protein if interest in Fig 1
+# iRFP
+CVData <- read.table("Z:/Ellen/! MBP paper/rap_iRFP_values.csv",header=TRUE,sep=",")
+CVDatadftable <- data.frame(CVData)
+
+CVDatadf <- CVDatadftable %>% pivot_longer(everything())
+
+CVDatadf$name <- factor(CVDatadf$name,                                    
+                  levels = c("light", "rap"))
+
+CVDataplot2 <- ggplot(CVDatadf, aes(x=name, y=value)) + geom_violin(trim=TRUE, fill = '#A4A4A4') + geom_boxplot(width = 0.15) + ylim(0,6000) +  theme(legend.position="none",panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+
+CVDataplot2
+ggsave("rap_iRFP_supp.pdf", width=2, height=3)
+
+```
+
+```{r}
+# FUS-CHOP stable cell line dissolution
+
+CVData <- read.table("Z:/Ellen/! MBP paper/FUSCHOP_CV_enrich.csv",header=TRUE,sep=",")
+CVDatadftable <- data.frame(CVData)
+
+CVDatadf <- CVDatadftable %>% pivot_longer(everything())
+
+CVDatadf$name <- factor(CVDatadf$name,                                    
+                  levels = c("var", "enrich"))
+
+CVDataplot2 <- ggplot(CVDatadf, aes(x=name, y=value)) + geom_violin(trim=TRUE, fill = '#A4A4A4') + geom_boxplot(width = 0.15) + ylim(0,1.5) +  theme(legend.position="none",panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+CVDataplot2
+
+
+ggsave("FUSCHOP_violin.pdf", width=2, height=3)
+
+```
+
+```{r}
+# timecourse data in 3xFUS channel
+
+
+SspBData <- read.table("Z:/Ellen/! MBP paper/time_CHOP_compiled.csv",header=TRUE,sep=",")
+
+SspB_df_tidy <- gather(SspBData, cell, ratio, -time)
+
+#ggplot(SspB_df_tidy, aes(x=time, y=ratio)) + geom_line(aes(color=cell))
+
+df_summary <- data.frame(time=SspBData$time, n=tapply(SspB_df_tidy$ratio, SspB_df_tidy$time, length), mean=tapply(SspB_df_tidy$ratio, SspB_df_tidy$time, mean))
+df_summary$sd <- tapply(SspB_df_tidy$ratio, SspB_df_tidy$time, sd)
+df_summary$sem <- df_summary$sd/sqrt(df_summary$n-1)
+df_summary$CI_lower <- df_summary$mean + qt((1-0.95)/2, df=df_summary$n-1)*df_summary$sem
+df_summary$CI_upper <- df_summary$mean - qt((1-0.95)/2, df=df_summary$n-1)*df_summary$sem
+
+
+ggplot(df_summary, aes(x=time, y=mean)) +
+   geom_line(data=SspB_df_tidy, aes(x=time, y=ratio, group=cell), color="grey") +
+   geom_line(size=1, alpha=0.8) +
+   geom_ribbon(aes(ymin=CI_lower, ymax=CI_upper) ,fill="blue", alpha=0.2) +
+   theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ylab("variance/mean")+
+  xlab("time (sec)") +
+  ylim(0,1.2) +
+  xlim(0,200)
+
+#ggsave("FUSCHOP_kinetics_fit_font.pdf", width=3, height=2)
+
+f <- function(time,A,B,K)(A+((K-A)/(1+exp(-1*time*B))))
+#f <- function(time,A,B)(A*exp(-time/B))
+fit <- nls(mean ~ f(time,A,B,K), data=df_summary, start=list(A=0.2,B=-0.03,K=0.75))
+summary(fit)
+
+fitY <- predict(fit)
+p <- ggplot(df_summary, aes(x=time, y=mean)) + geom_line(color="blue",size=1, alpha = 0.5) +geom_point(color="blue",size = 2, alpha = 0.5)+ geom_line(aes(x=time,y=fitY),size=1, alpha = 0.5) +
+   theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ylab("variance/mean")+
+  xlab("time (sec)") +
+  ylim(0,1.2) +
+  xlim(0,200)
+p
+
+#ggsave("SspB_kinetics_fit_testfit.pdf", width=3, height=2)
+
+
+```
+
+
+```{r}
+# FET family proteins IDRs
+
+CVData <- read.table("Z:/Ellen/! MBP paper/FETproteinsCV.csv",header=TRUE,sep=",")
+CVDatadftable <- data.frame(CVData)
+
+CVDatadf <- CVDatadftable %>% pivot_longer(everything())
+
+CVDatadf$name <- factor(CVDatadf$name,                                    
+                  levels = c("FUS_NEG", "FUS_MBP", "EWS_NEG", "EWS_MBP", "TAF15_NEG", "TAF15_MBP"))
+
+CVDataplot2 <- ggplot(CVDatadf, aes(x=name, y=value)) + geom_violin(trim=TRUE, fill = '#A4A4A4') + geom_boxplot(width = 0.15) + ylim(0,2) +  theme(legend.position="none",panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+CVDataplot2
+
+
+ggsave("FET_violin.pdf", width=3.5, height=3)
+
+```
+
+```{r}
+# FET family proteins IDR
+
+CVData <- read.table("Z:/Ellen/! MBP paper/FETproteinsEnrich.csv",header=TRUE,sep=",")
+CVDatadftable <- data.frame(CVData)
+
+CVDatadf <- CVDatadftable %>% pivot_longer(everything())
+
+CVDatadf$name <- factor(CVDatadf$name,                                    
+                  levels = c("FUS_NEG", "FUS_MBP", "EWS_NEG", "EWS_MBP", "TAF15_NEG", "TAF15_MBP"))
+
+CVDataplot2 <- ggplot(CVDatadf, aes(x=name, y=value)) + geom_violin(trim=TRUE, fill = '#A4A4A4') + geom_boxplot(width = 0.15) + ylim(0,2) +  theme(legend.position="none",panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+CVDataplot2
+
+
+ggsave("FET_violin_Enrich.pdf", width=3.5, height=3)
+
+```
+```{r}
+# FET family proteins full length
+
+CVData <- read.table("Z:/Ellen/! MBP paper/FETFLproteinsCV.csv",header=TRUE,sep=",")
+CVDatadftable <- data.frame(CVData)
+
+CVDatadf <- CVDatadftable %>% pivot_longer(everything())
+
+CVDatadf$name <- factor(CVDatadf$name,                                    
+                  levels = c("FUS_NEG", "FUS_MBP", "EWS_NEG", "EWS_MBP", "TAF15_NEG", "TAF15_MBP"))
+
+CVDataplot2 <- ggplot(CVDatadf, aes(x=name, y=value)) + geom_violin(trim=TRUE, fill = '#A4A4A4') + geom_boxplot(width = 0.15) + ylim(0,2) +  theme(legend.position="none",panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+CVDataplot2
+
+
+ggsave("FET_FL_violin.pdf", width=3.5, height=3)
+
+```
+
+
+```{r}
+# FET family proteins full length
+
+CVData <- read.table("Z:/Ellen/! MBP paper/FETFLproteinsEnrich.csv",header=TRUE,sep=",")
+CVDatadftable <- data.frame(CVData)
+
+CVDatadf <- CVDatadftable %>% pivot_longer(everything())
+
+CVDatadf$name <- factor(CVDatadf$name,                                    
+                  levels = c("FUS_NEG", "FUS_MBP", "EWS_NEG", "EWS_MBP", "TAF15_NEG", "TAF15_MBP"))
+
+CVDataplot2 <- ggplot(CVDatadf, aes(x=name, y=value)) + geom_violin(trim=TRUE, fill = '#A4A4A4') + geom_boxplot(width = 0.15) + ylim(0,2) +  theme(legend.position="none",panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+CVDataplot2
+
+
+ggsave("FET_FL_violin_Enrich.pdf", width=3.5, height=3)
+
+```
+
+```{r}
+
+AminoAcid <- read.table("Z:/Ellen/FUS family proteins/AminoAcidDistrib.csv",header=TRUE,sep=",")
+AminoAciddf <- data.frame(AminoAcid)
+
+#specify order of bars
+
+AminoAciddf$AA <- factor(AminoAciddf$AA, levels=c('Other','G','Q','S','Y'))
+AminoAciddf$Protein <- factor(AminoAciddf$Protein, levels=c('FUS','EWS','TAF'))
+
+#pie charts
+
+ggplot(data=AminoAciddf, aes(x = " ", y=Value, group=AA, colour=AA, fill=AA,)) +
+         geom_bar(width = 1, stat = "identity") +
+         coord_polar("y", start=0) + 
+         facet_grid(.~ Protein) + 
+         scale_fill_brewer(palette="Pastel1")+
+         theme_void()
+
+
+#ggsave("FETAApie.pdf", width=3.5, height=2)
+
+```
+
+
+```{r}
+install.packages('patchwork')
+
+```
+
+```{r}
+library(ggplot2)
+library(patchwork)
+
+FUS <- read.table("Z:/Ellen/FUS family proteins/FUSprop.csv",header=TRUE,sep=",")
+FUSdf <- data.frame(FUS)
+
+EWS <- read.table("Z:/Ellen/FUS family proteins/EWSprop.csv",header=TRUE,sep=",")
+EWSdf <- data.frame(EWS)
+
+TAF <- read.table("Z:/Ellen/FUS family proteins/TAFprop.csv",header=TRUE,sep=",")
+TAFdf <- data.frame(TAF)
+
+#FUS disorder
+p1<- ggplot(FUSdf, aes(x=Index, y=Disorder)) +
+   geom_line(data=FUSdf, aes(x=Index, y=Disorder), color="black",size=0.5) +
+   theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ylab("Disorder")+
+  xlab("Index")+
+  xlim(0,550)+
+  annotate("rect",xmin=1,xmax=214,ymin=-Inf,ymax=Inf, alpha=0.2, fill="grey")
+
+#EWS
+p2<- ggplot(EWSdf, aes(x=Index, y=Disorder)) +
+   geom_line(data=EWSdf, aes(x=Index, y=Disorder), color="black",size=0.5) +
+   theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ylab("Disorder")+
+  xlab("Index")+
+  xlim(0,550)+
+  annotate("rect",xmin=47,xmax=267,ymin=-Inf,ymax=Inf, alpha=0.2, fill="grey")
+
+#TAF15
+p3<- ggplot(TAFdf, aes(x=Index, y=Disorder)) +
+   geom_line(data=TAFdf, aes(x=Index, y=Disorder), color="black",size=0.5) +
+   theme(legend.position="none",panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ylab("Disorder")+
+  xlab("Index")+
+  xlim(0,550)+
+  annotate("rect",xmin=1,xmax=208,ymin=-Inf,ymax=Inf, alpha=0.2, fill="grey")
+
+p1 + p2 + p3 + plot_layout(ncol=1) 
+
+#ggsave("FETdisorder.pdf", width=3.5, height=3.5)
+
+```
+
+
+```{r}
+# FACS plot for supp
+FACS <- read.table("Z:/Ellen/! MBP paper/3xFUS stable expression quantification/stable FACS data 2.csv",header=TRUE,sep=",")
+
+
+get_density <- function(x, y, ...) {
+  dens <- MASS::kde2d(x, y, ...)
+  ix <- findInterval(x, dens$x)
+  iy <- findInterval(y, dens$y)
+  ii <- cbind(ix, iy)
+  return(dens$z[ii])
+}
+
+set.seed(1)
+dat <- data.frame(
+  x = c(
+    rnorm(1e4, mean = 0, sd = 0.1),
+    rnorm(1e3, mean = 0, sd = 0.1)
+  ),
+  y = c(
+    rnorm(1e4, mean = 0, sd = 0.1),
+    rnorm(1e3, mean = 0.1, sd = 0.2)
+  )
+)
+
+
+FACS$density <- get_density(FACS$mCherry, FACS$AF, n = 1000)
+ggplot(FACS) + geom_point(aes(mCherry, AF, color = density),size=0.5) + scale_x_log10() + scale_y_log10() + scale_color_gradientn(colours = viridis(256, option = "E")) +  theme_bw() + xlab("FusionRed") + ylab("iRFP")
+
+ggsave("FACS_plot.pdf",width = 4, height = 3)
+
+```
+

@@ -1,0 +1,677 @@
+---
+title: "MBP RNASeq Analysis"
+output: html_notebook
+---
+
+
+```{r}
+# install packages from bioconductor
+# http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("rnaseqGene")
+BiocManager::install("clusterProfiler")
+BiocManager::install("enrichplot")
+library(ggplot2)
+library(DESeq2)
+library(EnhancedVolcano)
+library(pheatmap)
+library(fgsea)
+library(data.table)
+library(enrichplot)
+library(DOSE)
+library(RColorBrewer)
+library(dplyr)
+library(tidyverse)
+```
+
+```{r}
+# import data
+# featurecounts data from galaxy
+
+cts <- as.matrix(read.csv('Z:/Ellen/RNASeq/Count_matrix.csv',row.names="gene_id"))
+coldata <- read.csv('Z:/Ellen/RNASeq/RNA_col_data.csv', row.names=1)
+coldata <- coldata[,c("condition","type")]
+coldata$condition <- factor(coldata$condition)
+coldata$type <- factor(coldata$type)
+dds <- DESeqDataSetFromMatrix(countData = cts,
+                              colData = coldata,
+                              design = ~ condition)
+smallestGroupSize <- 3
+keep <- rowSums(counts(dds) >= 10) >= smallestGroupSize
+dds <- dds[keep,]
+dds <- DESeq(dds)
+res <- results(dds)
+resOrdered <- res[order(res$pvalue),] # sort results by p-value
+#write.csv(as.data.frame(resOrdered),file="DESeq_res_all.csv")
+```
+
+```{r}
+# first we want to compare light and dark with no dox to identify genes that differ as a result of solely light conditions
+
+illum_cts <- cts[,!colnames(cts) %in% c("dark_dox_r1","dark_dox_r2","dark_dox_r3","light_dox_r1","light_dox_r2","light_dox_r3")]
+coldata_illum <- read.csv('Z:/Ellen/RNASeq/RNA_illum_col_data.csv', row.names=1)
+coldata_illum <- coldata_illum[,c("condition","type")]
+coldata_illum$condition <- factor(coldata_illum$condition, levels=c("dark","light"))
+coldata_illum$type <- factor(coldata_illum$type)
+
+illum_cts <- illum_cts[, rownames(coldata_illum)]
+all(rownames(coldata_illum) == colnames(illum_cts))
+
+dds_illum <- DESeqDataSetFromMatrix(countData = illum_cts,
+                              colData = coldata_illum,
+                              design = ~ condition)
+
+smallestGroupSize <- 3
+keep <- rowSums(counts(dds_illum) >= 10) >= smallestGroupSize
+dds_illum <- dds_illum[keep,]
+
+dds_illum <- DESeq(dds_illum)
+res_illum <- results(dds_illum)
+
+resOrdered_illum <- res_illum[order(res_illum$padj),]
+#write.csv(as.data.frame(resOrdered_illum),file="DESeq_res_illum.csv")
+
+```
+```{r}
+
+  EnhancedVolcano(res_illum,
+    lab = rownames(res_illum),
+    x = 'log2FoldChange',
+    y = 'pvalue',
+    title = 'light vs dark',
+    pCutoff = 10e-4,
+    FCcutoff = 0.14,
+    pointSize = 1.0,
+    labSize = 6.0,
+    #xlim = c(-3,3),
+   # ylim = c(0,40)
+    )
+
+#ggsave("FUSCHOP_illum_volcano.pdf", width=7, height=7)
+```
+```{r}
+# gsea analysis looking at effect of light alone
+
+gene_list <- res_illum$stat
+names(gene_list) <- rownames(res_illum)
+gene_list <- sort(gene_list, decreasing = TRUE)
+gene_list <- gene_list[!duplicated(names(gene_list))]
+head(gene_list)
+ranks_light <- gene_list
+gmt.file <- "Z:/Ellen/RNASeq/mh.all.v2023.1.Mm.symbols.gmt"
+
+pathways <- gmtPathways(gmt.file)
+str(head(pathways))
+str(ranks_light)
+
+fgseaRes_light <- fgsea(pathways, ranks_light, minSize=15, maxSize=500)
+head(fgseaRes_light[order(padj), ])
+fwrite(fgseaRes_light, file="fgsea_illum.tsv", sep="\t", sep2=c("", " ", ""))
+
+#plot results
+fgseaResimp <- fgseaRes_light[fgseaRes_light$padj<0.01,] #filter by p value
+fgseaResimp <- fgseaResimp[fgseaResimp$size>100,] # filter by size
+
+
+topPathwaysUp <- fgseaResimp[NES > 0][head(order(padj), n=5), pathway]
+topPathwaysDown <- fgseaResimp[NES < 0][head(order(padj), n=5), pathway]
+topPathways <- c(topPathwaysUp, rev(topPathwaysDown))
+fgseaRestop <- fgseaResimp[pathway %in% topPathways,]
+fgseaRestop <- fgseaRestop[order(fgseaRestop$NES),]
+
+fgseaRestop <- fgseaRestop %>% mutate(pathway = fct_reorder(pathway,NES))
+
+
+df <- as.data.frame(fgseaRestop)
+
+ggplot(df, aes(x = NES, y = pathway, size = size, color = padj)) + 
+  geom_point(stat = 'identity') + 
+  xlab("Normalized Enrichment Score")  + 
+  theme_bw()
+
+#ggsave("gsea_illum.pdf", width=6.5, height=3)
+
+```
+
+```{r}
+# compare dark and dark dox to look for genes that are up-regulated upon FUS-CHOP expression
+
+chop_cts <- cts[,!colnames(cts) %in% c("light_r1","light_r2","light_r3","light_dox_r1","light_dox_r2","light_dox_r3")]
+coldata_chop <- read.csv('Z:/Ellen/RNASeq/RNA_chop_col_data.csv', row.names=1)
+coldata_chop <- coldata_chop[,c("condition","type")]
+coldata_chop$condition <- factor(coldata_chop$condition, levels=c("dark","dark_dox"))
+coldata_chop$type <- factor(coldata_chop$type)
+
+chop_cts <- chop_cts[, rownames(coldata_chop)]
+all(rownames(coldata_chop) == colnames(chop_cts))
+
+# DESeq on dark minus and plus dox
+# in output table log2(dox/control)
+dds_chop <- DESeqDataSetFromMatrix(countData = chop_cts,
+                              colData = coldata_chop,
+                              design = ~ condition)
+smallestGroupSize <- 3
+keep <- rowSums(counts(dds_chop) >= 10) >= smallestGroupSize
+dds_chop <- dds_chop[keep,]
+
+dds_chop <- DESeq(dds_chop)
+res_chop <- results(dds_chop)
+# sort dox vs no dox DESeq results by p-value
+resOrdered_chop <- res_chop[order(res_chop$stat),]
+#resOrdered_chop
+#write.csv(as.data.frame(resOrdered_chop),file="Dox_vs_noDox.csv")
+```
+```{r}
+#FUS-CHOP volcano plot
+
+  EnhancedVolcano(res_chop,
+    lab = rownames(res_chop),
+    x = 'log2FoldChange',
+    y = 'pvalue',
+    title = 'dark vs dark-dox',
+    pCutoff = 10e-6,
+    FCcutoff = 1,
+    pointSize = 1.0,
+    labSize = 6.0,
+    )
+```
+
+```{r}
+#supplement
+# make volcano plot comparing dark to dark+dox with known genes
+
+known_FUSCHOP_genes_dn <- c('Inhba','Tgm2','Amigo2','Tsc22d1','Zmiz1','Mmp2','Wnt5a','Trim59','Glul','Thbs1','Tsc22d3','Spp1','Phgdh','Armcx2','Fuca2','Mmp9','Thbs2','Fstl1','cd99l2','Tns3','Fxyd5','Fn1','Ipxn','Scg5','Gfpt2','Plxna1','Itgb2','Col22a1','Ptpre','Snx9','Skil','Zfp36l1','Snai2','Sorbs2','Cd44','Tnfrsf11b','Loxl3','Ptpn14','Papp2','Oxr1','Frmd6','Vdr','Bcap29','Iah1','Nrp2','Irak2','Plod2','Etv1','Dhrs3','Abl1')
+
+known_FUSCHOP_genes_up <- c('Akap12','Tnfsf15','Gprc5a','Tmem132b','Ddit3','Clu','Pdlim1','Nectin4','Phldb2','Hbegf','Ap3s1','Flt1','Mob3b','Pbdc1','Cemip','Efr3b','Ptprs','Parp16','Mdk','Cd274','Hspb8','Lipg','Dclk1','Hmgn3','Pls1','Ctnnal1','Serpinb2','Capg','Mitf','Celf2','Elac2','Atg12','Adgre5','Mrps34','Sytl2','Fscn1','Sfn','Lima1','Rnase10','Slc35f6','Hmox2','Hgs','Ncbp2','Unc13d','Ncdn','Vat1','Lrrc20','Rpl23','Nmral1','Kcnab2')
+
+
+  keyvals.colour <- ifelse(
+    rownames(res_chop) %in% known_FUSCHOP_genes_dn, 'royalblue',
+      ifelse(rownames(res_chop) %in% known_FUSCHOP_genes_up, 'gold',
+        'black'))
+  keyvals.colour[is.na(keyvals.colour)] <- 'grey'
+  names(keyvals.colour)[keyvals.colour == 'grey'] <- 'other'
+  names(keyvals.colour)[keyvals.colour == 'royalblue'] <- 'known_FUSCHOP_genes_dn'
+  names(keyvals.colour)[keyvals.colour == 'gold'] <- 'known_FUSCHOP_genes_up'
+
+  
+
+  EnhancedVolcano(res_chop,
+    #lab = rownames(res_chop),
+    lab = NA,
+    x = 'log2FoldChange',
+    y = 'pvalue',
+    title = 'dark vs dark+dox',
+    pCutoff = 10e-6,
+    FCcutoff = 1,
+    #pointSize = 0.5,
+    labSize = 3,
+    xlim = c(-7,7),
+    ylim = c(0,60),
+    colCustom = keyvals.colour,
+    drawConnectors = TRUE,
+    widthConnectors = 0.5,
+    pointSize  = (ifelse(rownames(res_chop) %in% known_FUSCHOP_genes_dn==T|rownames(res_chop) %in% known_FUSCHOP_genes_up==T,3,0.01)),
+    )
+#ggsave("FUSCHOP_volcano_select.pdf", width=7, height=7)
+```
+
+```{r}
+#Supplement
+#known FUS-CHOP induced genes
+chop_known_only <- res_chop[rownames(res_chop) %in% known_FUSCHOP_genes_dn|rownames(res_chop) %in% known_FUSCHOP_genes_up,]
+
+  keyvals.colour <- ifelse(
+    rownames(chop_known_only) %in% known_FUSCHOP_genes_dn, 'royalblue',
+      ifelse(rownames(chop_known_only) %in% known_FUSCHOP_genes_up, 'gold',
+        'black'))
+  keyvals.colour[is.na(keyvals.colour)] <- 'grey'
+  names(keyvals.colour)[keyvals.colour == 'grey'] <- 'other'
+  names(keyvals.colour)[keyvals.colour == 'royalblue'] <- 'known_FUSCHOP_genes_dn'
+  names(keyvals.colour)[keyvals.colour == 'gold'] <- 'known_FUSCHOP_genes_up'
+
+  EnhancedVolcano(chop_known_only,
+    #lab = rownames(res_chop),
+    lab = NA,
+    x = 'log2FoldChange',
+    y = 'pvalue',
+    title = 'dark vs dark+dox',
+    pCutoff = 10e-6,
+    FCcutoff = 1,
+    labSize = 3,
+    xlim = c(-7,7),
+    ylim = c(0,60),
+    colCustom = keyvals.colour,
+    drawConnectors = TRUE,
+    widthConnectors = 0.5,
+    pointSize  = 3
+    )
+#ggsave("FUSCHOP_volcano_select_known_only.pdf", width=7, height=7)
+```
+```{r}
+# compare dark-dox and light-dox samples
+
+dox_cts <- cts[,!colnames(cts) %in% c("light_r1","light_r2","light_r3","dark_r1","dark_r2","dark_r3")]
+coldata_dox <- read.csv('Z:/Ellen/RNASeq/RNA_dox_col_data.csv', row.names=1)
+coldata_dox <- coldata_dox[,c("condition","type")]
+coldata_dox$condition <- factor(coldata_dox$condition, levels=c("dark_dox","light_dox"))
+coldata_dox$type <- factor(coldata_dox$type)
+
+dox_cts <- dox_cts[, rownames(coldata_dox)]
+all(rownames(coldata_dox) == colnames(dox_cts))
+# DESeq on light and dark with dox
+# in output table log2(light_dox/dark_dox)
+dds_dox <- DESeqDataSetFromMatrix(countData = dox_cts,
+                              colData = coldata_dox,
+                              design = ~ condition)
+
+smallestGroupSize <- 3
+keep <- rowSums(counts(dds_dox) >= 10) >= smallestGroupSize
+dds_dox <- dds_dox[keep,]
+
+dds_dox <- DESeq(dds_dox)
+res_dox <- results(dds_dox)
+resOrdered_dox <- res_dox[order(res_dox$stat),]
+#write.csv(as.data.frame(resOrdered_dox),file="light_dox_vs_dark_dox.csv")
+```
+
+```{r}
+#heat maps just showing the genes that under-expressed
+
+#first we want to generate a list of genes that are significantly different in the dark and light minus dox conditions to exclude genes that are light sensitive
+res_illum_sig <- na.omit(res_illum) # remove rows that contain an NA
+res_illum_sig <- res_illum_sig[res_illum_sig[,6]<=0.05,] #p value less than 1e-6
+res_illum_sig <- res_illum_sig[res_illum_sig[,2]<=-0.14|res_illum_sig[,2]>=0.14,] 
+res_chop_plot <- na.omit(res_chop) #remove rows that contain an NA
+res_chop_plot <- res_chop_plot[!(row.names(res_chop_plot) %in% row.names(res_illum_sig)),] # remove rows that were significantly differently in plus and minus light conditioins without dox
+res_chop_plot <- res_chop_plot[res_chop_plot[,6]<=0.05,] #only keep rows with p value less than 1e-6
+res_chop_plot <- res_chop_plot[res_chop_plot[,2]<=-1,] #only keep rows with fold change of at least half
+# we know have a list of genes that are under-expressed when dox is added to turn on FUS-CHOP and are not illumination dependent genes
+res_dox_plot <- res_dox[row.names(res_chop_plot)[],]# we are looking at the dox dark and light DESeq results considering only the genes that are underexpressed upon dox induction
+res_dox_plot <- na.omit(res_dox_plot)
+resOrdered_dox_plot <- res_dox_plot[order((res_dox_plot$stat)*-1),] 
+resOrdered_dox_plot <- na.omit(resOrdered_dox_plot)
+dds_plot <- dds[row.names(resOrdered_dox_plot)]
+ntd <- normTransform(dds,f = log2, pc = 1) # this gives log2(n+1)
+df <- as.data.frame(colData(dds_plot)[,c("condition","type")])
+
+breaksList = seq(-2.5, 2.5, by = 0.05)
+
+#pdf()
+p1 <- pheatmap(assay(ntd)[row.names(resOrdered_dox_plot)[1:20],c("dark_r1","dark_r2","dark_r3","light_r1","light_r2","light_r3","dark_dox_r1","dark_dox_r2","dark_dox_r3","light_dox_r1","light_dox_r2","light_dox_r3")], cluster_rows=FALSE, show_rownames=TRUE, display_numbers = FALSE,
+         cluster_cols=FALSE, annotation_col=df, scale = "row",cellheight=10, color = colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(length(breaksList)),
+         breaks = breaksList)
+
+#dev.off()
+
+```
+```{r}
+#heat maps just showing the genes that over-expressed
+
+#first we want to generate a list of genes that are significantly different in the dark and light minus dox conditions to exclude genes that are light sensitive
+res_illum_sig <- na.omit(res_illum) # remove rows that contain an NA
+res_illum_sig <- res_illum_sig[res_illum_sig[,6]<=0.05,] #p value less than 1e-6
+res_illum_sig <- res_illum_sig[res_illum_sig[,2]<=-0.14|res_illum_sig[,2]>=0.14,] #fold change of at least half
+resOrdered_illum_plot <- res_illum_sig[order((res_illum_sig$stat)*1),] 
+
+res_chop_plot <- na.omit(res_chop) #remove rows that contain an NA
+res_chop_plot <- res_chop_plot[!(row.names(res_chop_plot) %in% row.names(res_illum_sig)),] # remove rows that were significantly differently in plus and minus light condistioins without dox
+
+res_chop_plot <- res_chop_plot[res_chop_plot[,6]<=0.05,] #only keep rows with p value less than 1e-6
+res_chop_plot <- res_chop_plot[res_chop_plot[,2]>=1,] #only keep rows with fold change of at least double
+
+# we know have a list of genes that are under-expressed when dox is added to turn on FUS-CHOP and are not illumination dependent genes
+
+res_dox_plot <- res_dox[row.names(res_chop_plot)[],] # we are looking at the dox dark and light DESeq results considering only the genes that are over-expressed upon dox induction
+
+res_dox_plot <- na.omit(res_dox_plot)
+resOrdered_dox_plot <- res_dox_plot[order((res_dox_plot$stat)*1),] 
+resOrdered_dox_plot <- na.omit(resOrdered_dox_plot)
+dds_plot <- dds[row.names(resOrdered_dox_plot)]
+ntd <- normTransform(dds,f = log2, pc = 1) # this gives log2(n+1)
+df <- as.data.frame(colData(dds_plot)[,c("condition","type")])
+breaksList = seq(-2.5, 2.5, by = 0.05)
+#pdf()
+p2 <- pheatmap(assay(ntd)[row.names(resOrdered_dox_plot)[1:20],c("dark_r1","dark_r2","dark_r3","light_r1","light_r2","light_r3","dark_dox_r1","dark_dox_r2","dark_dox_r3","light_dox_r1","light_dox_r2","light_dox_r3")], cluster_rows=FALSE, show_rownames=TRUE, display_numbers = FALSE,
+         cluster_cols=FALSE, annotation_col=df, scale = "row",cellheight=10, color = colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(length(breaksList)),
+         breaks = breaksList)
+
+#dev.off()
+```
+
+```{r}
+# gsea analysis looking at what happens upon light dissolution
+
+res_dox_GSEA <- res_dox[!(row.names(res_dox) %in% row.names(res_illum_sig)),]
+gene_list <- res_dox_GSEA$stat
+names(gene_list) <- rownames(res_dox_GSEA)
+gene_list <- sort(gene_list, decreasing = TRUE)
+gene_list <- gene_list[!duplicated(names(gene_list))]
+head(gene_list)
+ranks <- gene_list
+gmt.file <- "Z:/Ellen/RNASeq/mh.all.v2023.1.Mm.symbols.gmt"
+
+pathways <- gmtPathways(gmt.file)
+str(head(pathways))
+str(ranks)
+
+fgseaRes <- fgsea(pathways, ranks, minSize=15, maxSize=500)
+#head(fgseaRes[order(NES), ])
+fwrite(fgseaRes, file="fgsea.tsv", sep="\t", sep2=c("", " ", ""))
+
+fgseaResimp <- fgseaRes[fgseaRes$padj<0.05,] #filter by p value
+fgseaResimp <- fgseaResimp[fgseaResimp$size>100,] # filter by size
+topPathwaysUp <- fgseaResimp[NES > 0][head(order(padj), n=5), pathway]
+topPathwaysDown <- fgseaResimp[NES < 0][head(order(padj), n=5), pathway]
+topPathways <- c(topPathwaysUp, rev(topPathwaysDown))
+fgseaRestop <- fgseaResimp[pathway %in% topPathways,]
+fgseaRestop <- fgseaRestop[order(fgseaRestop$NES),]
+
+fgseaRestop <- fgseaRestop %>% mutate(pathway = fct_reorder(pathway,NES))
+
+
+df <- as.data.frame(fgseaRestop)
+
+ggplot(df, aes(x = NES, y = pathway, size = size, color = padj)) + 
+  geom_point(stat = 'identity') + 
+  xlab("Normalized Enrichment Score")  + 
+  theme_bw()
+
+#ggsave("diss_gsea_dotplot.pdf", width=6.5, height=2.8)
+
+```
+```{r}
+#Counting genes that are significant, FUS-CHOP induced!
+
+res_illum_sig <- na.omit(res_illum) # remove rows that contain an NA
+res_illum_sig <- res_illum_sig[res_illum_sig[,6]<=0.05,] #p value less than 1e-6
+res_illum_sig <- res_illum_sig[res_illum_sig[,2]<=-0.14|res_illum_sig[,2]>=0.14,] #fold change of at least 25%
+print('number of genes excluded due to light dif in absence of dox')
+nrow(res_illum_sig) # report the number of exlcuded genes
+resOrdered_illum_plot <- res_illum_sig[order((res_illum_sig$stat)*1),] 
+
+print('number of genes we are looking at in analysis')
+res_chop_plot <- na.omit(res_chop) #remove rows that contain an NA
+nrow(res_chop) # how many genes are we looking at total
+
+res_chop_plot <- res_chop_plot[!(row.names(res_chop_plot) %in% row.names(res_illum_sig)),] # remove rows that were significantly differently in plus and minus light conditions without dox
+print('number of genes we are looking at after sig changes by illum are excluded')
+nrow(res_chop_plot)
+
+res_dox_ex <- res_dox[!(row.names(res_dox) %in% row.names(res_illum_sig)),] # remove rows that were significantly differently in plus and minus light conditioins without dox
+
+res_chop_plot <- res_chop_plot[res_chop_plot[,6]<=0.05,] #only keep rows with p value less than 1e-6
+res_chop_plot <- res_chop_plot[res_chop_plot[,2]>=1,] #only keep rows with fold change of at least double
+
+# we know have a list of genes that are under-expressed when dox is added to turn on FUS-CHOP and are not illumination dependent genes
+print('number of genes that go up after dox induction')
+nrow(res_chop_plot) 
+
+res_dox_all_high <- res_dox_ex[res_dox_ex[,2]<=-0.58,]
+print('out of all genes, how many decrease by at least 25%?')
+nrow(res_dox_all_high)
+
+res_dox_wrong_high <- res_dox_ex[res_dox_ex[,2]>=0.58,]
+print('out of all genes, how many increase by at least 25%? (wrong direction)?')
+nrow(res_dox_wrong_high)
+
+res_dox_plot <- res_dox[row.names(res_chop_plot)[],] # we are looking at the dox dark and light DESeq results considering only the genes that are over-expressed upon dox induction
+res_dox_plot <- na.omit(res_dox_plot)
+
+res_dox_high <- res_dox_plot[res_dox_plot[,2]<=-0.58,] # at least 50% recovery
+print('how many of the FUS-Chop induced genes recover by at least 25%?')
+nrow(res_dox_high) # count the number of genes that mostly recover
+
+res_dox_wrong_fus_high <- res_dox_plot[res_dox_plot[,2]>=0.58,] # at least 50% recovery
+print('out of the FUS-CHOP induced genes, how many increase by at least 25%? (wrong direction)?')
+nrow(res_dox_wrong_fus_high) # count the number of genes that mostly recover
+```
+```{r}
+#now lets look at a random set of genes
+
+res_chop_df <- as.data.frame(res_chop_plot)
+p2 <- ggplot(data = res_chop_df, aes(x = baseMean)) + geom_histogram(bins=20) + scale_x_continuous(trans = 'log2')
+p2
+
+#extract data from the genes we care about histogram:
+hist_data <- ggplot_build(p2)
+hist_data_2 <- hist_data$data[[1]]
+
+nums_to_pull <- rmultinom(1,nrow(res_chop_plot),prob = hist_data_2$count)
+
+
+res_chop_all <- res_chop[!(row.names(res_chop) %in% row.names(res_illum_sig)),] #exclude light perturbed genes
+res_chop_all_df <- as.data.frame(res_chop_all)
+res_chop_all_df_order <- res_chop_all_df[order(res_chop_all_df$baseMean),]
+
+rand_comb <- data.frame()
+
+for (i in 1:20){
+  j = 1
+  k = 1
+  while(res_chop_all_df_order$baseMean[j]<(2^hist_data_2$xmin[i])& j<nrow(res_chop_all_df_order)){
+    j = j + 1
+  }
+  while(res_chop_all_df_order$baseMean[k]<(2^hist_data_2$xmax[i])& k<nrow(res_chop_all_df_order)){
+    k = k + 1
+  }
+  if(nums_to_pull[i]>0){
+  rands <- sample_n(res_chop_all_df_order[j:k,],nums_to_pull[i])
+  rand_comb <- rbind(rand_comb,rands)
+  rm(rands)
+  }
+}
+
+# now rand_comb is a list of randomly chosen genes with similar expression levels to out FUS-CHOP perturbed genes!
+```
+```{r}
+
+p3 <- ggplot(data = rand_comb, aes(x = baseMean)) + geom_histogram(bins=20) + scale_x_continuous(trans = 'log2')
+p3
+
+rand_select_dox_effect <- res_dox[row.names(rand_comb)[],]
+rand_select_dox_effect <- na.omit(rand_select_dox_effect)
+
+print('within random subset, how many genes decrease by at least 25%?')
+rand_select_half <- rand_select_dox_effect[rand_select_dox_effect[,2]<=-0.58,] 
+nrow(rand_select_half)
+
+print('within random subset, how many genes increase by at least 25%  (wrong direction)?')
+rand_select_half_wrong <- rand_select_dox_effect[rand_select_dox_effect[,2]>=0.58,] 
+nrow(rand_select_half_wrong)
+```
+
+```{r}
+res_chop_df <- as.data.frame(res_chop_plot)
+p1 <- ggplot(data = res_chop_df, aes(x = baseMean)) + geom_histogram(bins=20) + scale_x_continuous(trans = 'log2')+
+  theme(panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ggtitle('FUS-CHOP induced')+
+  #xlim(0,20000)+
+  ylim(0,40)
+
+res_chop_df_2 <- as.data.frame(rand_comb)
+p2 <- ggplot(data = res_chop_df_2, aes(x = baseMean)) + geom_histogram(bins=20) + scale_x_continuous(trans = 'log2')+
+  theme(panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ggtitle('randomly selected')+
+  #xlim(0,20000)+
+  ylim(0,40)
+
+res_chop_df_3 <- as.data.frame(res_chop)
+p3 <- ggplot(data = res_chop_df_3, aes(x = baseMean)) + geom_histogram(bins=20) + scale_x_continuous(trans = 'log2')+
+  theme(panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ggtitle('all genes')
+
+pall <- ggarrange(p1, p2, p3, ncol = 3, nrow = 1)
+pall
+#ggsave("FUS_induced_histograms.pdf", width=7, height=3)
+```
+
+```{r}
+#now lets do it all again but for FUS-CHOP repressed genes
+
+res_illum_sig <- na.omit(res_illum) # remove rows that contain an NA
+res_illum_sig <- res_illum_sig[res_illum_sig[,6]<=0.05,] #p value less than 1e-6
+res_illum_sig <- res_illum_sig[res_illum_sig[,2]<=-0.14|res_illum_sig[,2]>=0.14,] #fold change of at least 25%
+print('number of genes excluded due to light dif in absence of dox')
+nrow(res_illum_sig) # report the number of exlcuded genes
+resOrdered_illum_plot <- res_illum_sig[order((res_illum_sig$stat)*1),] 
+
+print('number of genes we are looking at in analysis')
+res_chop_plot <- na.omit(res_chop) #remove rows that contain an NA
+nrow(res_chop) # how many genes are we looking at total
+
+res_chop_plot <- res_chop_plot[!(row.names(res_chop_plot) %in% row.names(res_illum_sig)),] # remove rows that were significantly differently in plus and minus light conditioins without dox
+print('number of genes we are looking at after sig changes by illum are excluded')
+nrow(res_chop_plot)
+
+res_dox_ex <- res_dox[!(row.names(res_dox) %in% row.names(res_illum_sig)),] # remove rows that were significantly differently in plus and minus light conditioins without dox
+
+res_chop_plot <- res_chop_plot[res_chop_plot[,6]<=0.05,] #only keep rows with p value less than 1e-6
+res_chop_plot <- res_chop_plot[res_chop_plot[,2]<=-1,] #only keep rows with fold change of at least half
+
+# we know have a list of genes that are under-expressed when dox is added to turn on FUS-CHOP and are not illumination dependent genes
+print('number of genes that go down after dox induction')
+nrow(res_chop_plot) 
+
+res_dox_all_high <- res_dox_ex[res_dox_ex[,2]>=0.58,]
+print('out of all genes, how many increase by at least 25%?')
+nrow(res_dox_all_high)
+
+res_dox_wrong_high <- res_dox_ex[res_dox_ex[,2]<=-0.58,]
+print('out of all genes, how many decrease by at least 25%? (wrong direction)?')
+nrow(res_dox_wrong_high)
+
+res_dox_plot <- res_dox[row.names(res_chop_plot)[],] # we are looking at the dox dark and light DESeq results considering only the genes that are over-expressed upon dox induction
+res_dox_plot <- na.omit(res_dox_plot)
+
+res_dox_high <- res_dox_plot[res_dox_plot[,2]>=0.58,] # at least 50% recovery
+print('how many of the FUS-Chop induced genes recover by at least 25%?')
+nrow(res_dox_high) # count the number of genes that mostly recover
+
+res_dox_wrong_fus_high <- res_dox_plot[res_dox_plot[,2]<=-0.58,] # at least 50% recovery
+print('out of the FUS-CHOP induced genes, how many decrease by at least 25%? (wrong direction)?')
+nrow(res_dox_wrong_fus_high) # count the number of genes that mostly recover
+```
+
+```{r}
+#now lets look at a random set of genes
+
+res_chop_df <- as.data.frame(res_chop_plot)
+p2 <- ggplot(data = res_chop_df, aes(x = baseMean)) + geom_histogram(bins=20) + scale_x_continuous(trans = 'log2')
+p2
+
+#extract data from the genes we care about histogram:
+hist_data <- ggplot_build(p2)
+hist_data_2 <- hist_data$data[[1]]
+
+nums_to_pull <- rmultinom(1,nrow(res_chop_plot),prob = hist_data_2$count)
+
+
+res_chop_all <- res_chop[!(row.names(res_chop) %in% row.names(res_illum_sig)),] #exclude light perturbed genes
+res_chop_all_df <- as.data.frame(res_chop_all)
+res_chop_all_df_order <- res_chop_all_df[order(res_chop_all_df$baseMean),]
+
+rand_comb <- data.frame()
+
+for (i in 1:20){
+  j = 1
+  k = 1
+  while(res_chop_all_df_order$baseMean[j]<(2^hist_data_2$xmin[i])& j<nrow(res_chop_all_df_order)){
+    j = j + 1
+  }
+  while(res_chop_all_df_order$baseMean[k]<(2^hist_data_2$xmax[i])& k<nrow(res_chop_all_df_order)){
+    k = k + 1
+  }
+  if(nums_to_pull[i]>0){
+  rands <- sample_n(res_chop_all_df_order[j:k,],nums_to_pull[i])
+  rand_comb <- rbind(rand_comb,rands)
+  rm(rands)
+  }
+}
+
+# now rand_comb is a list of randomly chosen genes with similiar expression levels to out FUS-CHOP perturbed genes!
+```
+
+
+```{r}
+
+p3 <- ggplot(data = rand_comb, aes(x = baseMean)) + geom_histogram(bins=20) + scale_x_continuous(trans = 'log2')
+p3
+
+rand_select_dox_effect <- res_dox[row.names(rand_comb)[],]
+rand_select_dox_effect <- na.omit(rand_select_dox_effect)
+
+print('within random subset, how many genes increase by at least 25%?')
+rand_select_half <- rand_select_dox_effect[rand_select_dox_effect[,2]>=0.58,] 
+nrow(rand_select_half)
+
+print('within random subset, how many genes decrease by at least 25%  (wrong direction)?')
+rand_select_half_wrong <- rand_select_dox_effect[rand_select_dox_effect[,2]<=-0.58,] 
+nrow(rand_select_half_wrong)
+
+```
+```{r}
+res_chop_df <- as.data.frame(res_chop_plot)
+p1 <- ggplot(data = res_chop_df, aes(x = baseMean)) + geom_histogram(bins=20) + scale_x_continuous(trans = 'log2')+
+  theme(panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ggtitle('FUS-CHOP repressed')+
+  #xlim(0,20000)+
+  ylim(0,100)
+
+res_chop_df_2 <- as.data.frame(rand_comb)
+p2 <- ggplot(data = res_chop_df_2, aes(x = baseMean)) + geom_histogram(bins=20) + scale_x_continuous(trans = 'log2')+
+  theme(panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ggtitle('randomly selected')+
+  #xlim(0,20000)
+  ylim(0,100)
+
+res_chop_df_3 <- as.data.frame(res_chop)
+p3 <- ggplot(data = res_chop_df_3, aes(x = baseMean)) + geom_histogram(bins=20) + scale_x_continuous(trans = 'log2')+
+  theme(panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ggtitle('all genes')
+
+pall <- ggarrange(p1, p2, p3, ncol = 3, nrow = 1)
+pall
+#ggsave("FUS_repressed_histograms.pdf", width=7, height=3)
+
+```
+
+```{r}
+#now let's make some bar plots showing fraction of genes going up/down
+gene_Data <- read.table("Z:/Ellen/RNASeq/FUS_induced_half.csv",header=TRUE,sep=",")
+gene_Data_df <- data.frame(gene_Data)
+
+gene_Data_df$direction <- factor(gene_Data_df$direction , levels = c('up','down'))
+gene_Data_df$gene_set <- factor(gene_Data_df$gene_set , levels = c('FUS','random','all'))
+
+
+p1 <- ggplot(gene_Data_df, aes(fill=direction,y=frac,x=gene_set)) + geom_bar(position="dodge", stat="identity")+
+  theme(panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ylim(0,0.2)
+p1
+
+#ggsave("FUS_induced_fractions.pdf", width=7, height=3)
+
+```
+```{r}
+#now let's make some bar plots showing fraction of genes going up/down
+gene_Data <- read.table("Z:/Ellen/RNASeq/FUS_repressed_half.csv",header=TRUE,sep=",")
+gene_Data_df <- data.frame(gene_Data)
+
+gene_Data_df$direction <- factor(gene_Data_df$direction , levels = c('up','down'))
+gene_Data_df$gene_set <- factor(gene_Data_df$gene_set , levels = c('FUS','random','all'))
+
+
+p1 <- ggplot(gene_Data_df, aes(fill=direction,y=frac,x=gene_set)) + geom_bar(position="dodge", stat="identity")+
+  theme(panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  ylim(0,0.22)+
+  ggtitle('25% recovery metric')
+p1
+#ggsave("FUS_repressed_fractions.pdf", width=7, height=3)
+
+```
+```{r}
+write.csv(res_chop_plot, file = "repressed genes")
+```
